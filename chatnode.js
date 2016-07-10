@@ -5,6 +5,8 @@
  *
  * chatnode is a simple NodeJS chat server.
  *
+ * Tabstops are four spaces
+ *
  * COPYRIGHT (C) 2016, IAN M. FINK.
  * ALL RIGHTS RESERVED.
  *
@@ -35,6 +37,20 @@
  *
  */
 
+/*
+ * Configuration Information
+ */
+
+/* To quickly access chatnode.js server:  telnet <IP Addr> <Port Number> */
+
+/* change "HOST" to machine's IP address if network access is desired */
+// var HOST = "127.0.0.1";	
+var HOST = "192.168.5.70";
+var PORT = 8010;
+var EVERYONE = 1;
+var ALL_BUT_ME = 2;
+var DEBUG = 0;
+
 /*******************************************************************/
 
 function 
@@ -43,7 +59,9 @@ createConnectionCallback(socket)
 	socket.addrPort = socket.remoteAddress + "_" + socket.remotePort;
 	my_server.clients[socket.addrPort] = 
 		{username:"", "socket":socket, quitNormal:0};
-	console.log("CONNECTED: " + socket.addrPort + "\n");
+	if (DEBUG) {
+		console.log("CONNECTED: " + socket.addrPort + "\n");
+	}
 	socket.write("Welcome: " + socket.addrPort + "\n");
 	socket.write("Please enter a username:  ");
 	socket.on('data', function(data) { receiveDataCallback(data, socket) });
@@ -64,9 +82,12 @@ receiveDataCallback(data, socket)
 	dataString = dataString.replace("\r", "");
 	dataString = dataString.trim();
 
-	console.log("NAME: " + socket.addrPort);
-	console.log("DATE: " + d.toLocaleString());
-	console.log("DATA: " + dataString);
+	if (DEBUG) {
+		console.log("NAME: " + socket.addrPort);
+		console.log("DATE: " + d.toLocaleString());
+		console.log("DATA: " + dataString);
+	}
+
 	delete d;
 
 	/* has a username been chosen? */
@@ -193,16 +214,18 @@ actionOrPossesion(socket, dataString)
 function
 uniqueUserName(dataString, socket)
 {
+	var upperName = dataString.toUpperCase();
+
 	for (var key in my_server.clients) {
-		if (my_server.clients[key].username == dataString) {
-			socket.write("\"" + dataString + 
+		if (my_server.clients[key].username == upperName) {
+			socket.write("\"" + upperName + 
 				"\" is already in use.  Choose another name.\n"
 			);
 			socket.write("Please enter a user name:  ");
 			return;
 		}
 	}
-	my_server.clients[socket.addrPort].username = dataString;
+	my_server.clients[socket.addrPort].username = upperName;
 } /* uniqueUserName */
 
 /*******************************************************************/
@@ -234,7 +257,9 @@ closeCallback(data, socket)
 	var uName = myUserName(socket);
 	var clientEntry = myClientEntry(socket);
 
-	console.log("CLOSED: " + socket.addrPort + " " + uName + "\n");
+	if (DEBUG) {
+		console.log("CLOSED: " + socket.addrPort + " " + uName + "\n");
+	}
 
 	if (clientEntry !== {}) {
 		if (clientEntry.quitNormal == 0) {
@@ -307,20 +332,11 @@ helpMenu()
 /*******************************************************************/
 
 var net = require('net');
-
-var HOST = "127.0.0.1";
-var PORT = 8010;
-var EVERYONE = 1;
-var ALL_BUT_ME = 2;
-
 var my_server = {};
 
 my_server.clients = {};
 
 my_server.server = net.createServer(createConnectionCallback);
-
-
-my_server.server.listen(PORT, HOST);
 
 console.log(
 	"***********************************************\n" +
@@ -329,9 +345,11 @@ console.log(
 	"ALL RIGHTS RESERVED\n" +
 	"***********************************************\n" +
 	"\n" +
-	"chat server is running HOST=\'" + HOST + "\' PORT=\'" + PORT + "\'\n\n" +
+	"chatnode.js server is running HOST=\'" + HOST + "\' PORT=\'" + PORT + "\'\n\n" +
 	helpMenu() 
 	);
+
+my_server.server.listen(PORT, HOST);
 
 /*
  * End of file chatnode.js
